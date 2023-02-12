@@ -36,7 +36,7 @@ do
 	cp ${IMAGES}/redis.ext2 ${IMAGES}/redis.ext2.disposible
 
 	taskset -c ${CPU1} qemu-guest \
-		-k ${IMAGES}/linux-4.0.0 \
+		-k ${IMAGES}/nolupine-qemu.kernel \
 		-d ${IMAGES}/redis.ext2.disposible \
 		-a "root=/dev/vda rw console=ttyS0 init=/guest_start.sh /trusted/redis-server" \
                 -m 1024 -p ${CPU2} \

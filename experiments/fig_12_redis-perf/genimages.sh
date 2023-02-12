@@ -12,7 +12,8 @@ IMAGES=$(pwd)/images
 
 rm -rf $IMAGES
 mkdir -p $IMAGES
-cp imple/redis-initrd.cpio.gz $IMAGES
+cp impl/redis-initrd.cpio.gz $IMAGES
+cp impl/redis-initrd-normal.cpio.gz $IMAGES
 
 # ========================================================================
 # Generate Unikraft VM images
@@ -34,7 +35,7 @@ KERNELS="${LUPINEDIR}/Lupine-Linux/kernelbuild/"
 #GENERIC_FC_KPATH="${KERNELS}/microvm++redis/vmlinux"
 # compressed one for QEMU
 LUPINE_KVM_KPATH="${KERNELS}/lupine-djw-kml-qemu++redis/vmlinuz-4.0.0-kml"
-NOLUPINE_KVM_KPATH="${KERNELS}/lupine-djw-nokml-qemu++redis/vmlinuz-4.0.0-kml"
+NOLUPINE_KVM_KPATH="${KERNELS}/lupine-djw-nokml-qemu++redis/vmlinuz-4.0.0"
 #GENERIC_KVM_KPATH="${KERNELS}/microvm++redis/vmlinuz-4.0.0"
 
 #FIRECRACKER_PATH=.firecracker
