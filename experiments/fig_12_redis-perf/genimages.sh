@@ -10,8 +10,8 @@ BUILDDIR=..
 GUESTSTART=$(pwd)/data/guest_start.sh
 IMAGES=$(pwd)/images
 
-rm -rf $IMAGES
-mkdir -p $IMAGES
+#rm -rf $IMAGES
+#mkdir -p $IMAGES
 
 # ========================================================================
 # Generate Unikraft VM images
@@ -29,26 +29,28 @@ build_lupine
 
 KERNELS="${LUPINEDIR}/Lupine-Linux/kernelbuild/"
 # uncompressed version for firecracker
-LUPINE_FC_KPATH="${KERNELS}/lupine-djw-kml++redis/vmlinux"
-GENERIC_FC_KPATH="${KERNELS}/microvm++redis/vmlinux"
+#LUPINE_FC_KPATH="${KERNELS}/lupine-djw-kml++redis/vmlinux"
+#GENERIC_FC_KPATH="${KERNELS}/microvm++redis/vmlinux"
 # compressed one for QEMU
 LUPINE_KVM_KPATH="${KERNELS}/lupine-djw-kml-qemu++redis/vmlinuz-4.0.0-kml"
-GENERIC_KVM_KPATH="${KERNELS}/microvm++redis/vmlinuz-4.0.0"
+NOLUPINE_KVM_KPATH="${KERNELS}/lupine-djw-nokml-qemu++redis/vmlinuz-4.0.0-kml"
+#GENERIC_KVM_KPATH="${KERNELS}/microvm++redis/vmlinuz-4.0.0"
 
-FIRECRACKER_PATH=.firecracker
-if [ ! -f "$LUPINE_FC_KPATH" ]; then
-	echo "Lupine not built, something is wrong"
-	exit 1
-fi
+#FIRECRACKER_PATH=.firecracker
+#if [ ! -f "$LUPINE_FC_KPATH" ]; then
+#	echo "Lupine not built, something is wrong"
+#	exit 1
+#fi
 
-cp $LUPINE_FC_KPATH ${IMAGES}/lupine-fc.kernel
-cp $GENERIC_FC_KPATH ${IMAGES}/generic-fc.kernel
+#cp $LUPINE_FC_KPATH ${IMAGES}/lupine-fc.kernel
+#cp $GENERIC_FC_KPATH ${IMAGES}/generic-fc.kernel
 cp $LUPINE_KVM_KPATH ${IMAGES}/lupine-qemu.kernel
-cp $GENERIC_KVM_KPATH ${IMAGES}/generic-qemu.kernel
+cp $NOLUPINE_KVM_KPATH ${IMAGES}/nolupine-qemu.kernel
+#cp $GENERIC_KVM_KPATH ${IMAGES}/generic-qemu.kernel
 
-if [ ! -f "$FIRECRACKER_PATH" ]; then
-	ln -s ${LUPINEDIR}/Lupine-Linux/firecracker $FIRECRACKER_PATH
-fi
+#if [ ! -f "$FIRECRACKER_PATH" ]; then
+#	ln -s ${LUPINEDIR}/Lupine-Linux/firecracker $FIRECRACKER_PATH
+#fi
 
 pushd ${LUPINEDIR}/Lupine-Linux/
 # various patches...
@@ -130,93 +132,93 @@ cp ${IMAGES}/osv/root/osv/build/release/kernel.elf ${IMAGES}/osv-fc.kernel
 # Generate Rump VM image
 # ========================================================================
 
-CONTAINER=rump-tmp
-docker pull hlefeuvre/rump
-docker run --rm --privileged --name=$CONTAINER \
-			--cpuset-cpus="${CPU1}-${CPU4}" \
-			-v $(pwd)/data:/data-imported \
-			-dt hlefeuvre/rump
-docker exec -it $CONTAINER cp /data-imported/redis.conf \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/always-show-logo/#always-show-logo/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/replica-serve-stale/#replica-serve-stale/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/supervised/#supervised/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/replica-lazy-flush/#replica-lazy-flush/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/aof-load-truncated/#aof-load-truncated/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/aof-use-rdb-preamble/#aof-use-rdb-preamble/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/dynamic-hz/#dynamic-hz/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/stream-node-/#stream-node-/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/list-max-ziplist-size -2/list-max-ziplist-entries 512/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/list-compress-depth 0/list-max-ziplist-value 64/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/hll-sparse-max-byte/#hll-sparse-max-byte/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/rdb-save-incremental-fsync/#rdb-save-incremental-fsync/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/latency-monitor-threshold/#latency-monitor-threshold/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/replica/slave/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/lazyfree-/#lazyfree-/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER sed -i -e "s/protected-mode/#protected-mode/" \
-		   /root/rumprun-packages/redis/images/data/conf/redis.conf
-docker exec -it $CONTAINER bash -c \
-		". /root/rumprun/obj-amd64-hw/config-PATH.sh && \
-		 cd /root/rumprun-packages/redis && make cache"
-docker exec -it $CONTAINER bash -c \
-		". /root/rumprun/obj-amd64-hw/config-PATH.sh && \
-		cd /root/rumprun-packages/redis && \
-		/root/rumprun/rumprun/bin/rumprun-bake hw_virtio \
-		bin/redis-server.img ./bin/redis-server"
-
-mkdir -p ${IMAGES}/rump/root/
-docker cp ${CONTAINER}:/root/rumprun/ ${IMAGES}/rump/root/
-docker cp ${CONTAINER}:/root/rumprun-packages/ ${IMAGES}/rump/root/
-docker container stop $CONTAINER
-docker rm -f $CONTAINER
-
-cp ${IMAGES}/rump/root/rumprun-packages/redis/bin/redis-server.img \
-		${IMAGES}/rump-qemu.img
-cp ${IMAGES}/rump/root/rumprun-packages/redis/images/data.iso ${IMAGES}/rump-qemu.iso
-chmod u+x ${IMAGES}/rump/root/rumprun/app-tools/rumprun
+# CONTAINER=rump-tmp
+# docker pull hlefeuvre/rump
+# docker run --rm --privileged --name=$CONTAINER \
+# 			--cpuset-cpus="${CPU1}-${CPU4}" \
+# 			-v $(pwd)/data:/data-imported \
+# 			-dt hlefeuvre/rump
+# docker exec -it $CONTAINER cp /data-imported/redis.conf \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/always-show-logo/#always-show-logo/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/replica-serve-stale/#replica-serve-stale/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/supervised/#supervised/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/replica-lazy-flush/#replica-lazy-flush/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/aof-load-truncated/#aof-load-truncated/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/aof-use-rdb-preamble/#aof-use-rdb-preamble/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/dynamic-hz/#dynamic-hz/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/stream-node-/#stream-node-/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/list-max-ziplist-size -2/list-max-ziplist-entries 512/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/list-compress-depth 0/list-max-ziplist-value 64/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/hll-sparse-max-byte/#hll-sparse-max-byte/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/rdb-save-incremental-fsync/#rdb-save-incremental-fsync/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/latency-monitor-threshold/#latency-monitor-threshold/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/replica/slave/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/lazyfree-/#lazyfree-/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER sed -i -e "s/protected-mode/#protected-mode/" \
+# 		   /root/rumprun-packages/redis/images/data/conf/redis.conf
+# docker exec -it $CONTAINER bash -c \
+# 		". /root/rumprun/obj-amd64-hw/config-PATH.sh && \
+# 		 cd /root/rumprun-packages/redis && make cache"
+# docker exec -it $CONTAINER bash -c \
+# 		". /root/rumprun/obj-amd64-hw/config-PATH.sh && \
+# 		cd /root/rumprun-packages/redis && \
+# 		/root/rumprun/rumprun/bin/rumprun-bake hw_virtio \
+# 		bin/redis-server.img ./bin/redis-server"
+# 
+# mkdir -p ${IMAGES}/rump/root/
+# docker cp ${CONTAINER}:/root/rumprun/ ${IMAGES}/rump/root/
+# docker cp ${CONTAINER}:/root/rumprun-packages/ ${IMAGES}/rump/root/
+# docker container stop $CONTAINER
+# docker rm -f $CONTAINER
+# 
+# cp ${IMAGES}/rump/root/rumprun-packages/redis/bin/redis-server.img \
+# 		${IMAGES}/rump-qemu.img
+# cp ${IMAGES}/rump/root/rumprun-packages/redis/images/data.iso ${IMAGES}/rump-qemu.iso
+# chmod u+x ${IMAGES}/rump/root/rumprun/app-tools/rumprun
 
 # ========================================================================
 # Generate Hermitux VM image
 # ========================================================================
 
-CONTAINER=hermitux-tmp
-docker pull olivierpierre/hermitux
-docker run --rm --privileged --name=$CONTAINER \
-			--cpuset-cpus="${CPU1}-${CPU4}" \
-			-v $(pwd)/data:/data-imported \
-			-dt olivierpierre/hermitux
-docker exec -it $CONTAINER bash -c \
-		 "cd /root/hermitux/apps/redis-2.0.4 && make"
-mkdir -p ${IMAGES}/hermitux/
-docker cp ${CONTAINER}:/root/hermitux/apps/redis-2.0.4/redis-server \
-	${IMAGES}/hermitux/
-docker cp ${CONTAINER}:/root/hermitux/apps/redis-2.0.4/redis.conf \
-	${IMAGES}/hermitux/
-docker cp ${CONTAINER}:/root/hermitux/apps/redis-2.0.4/.minifs \
-	${IMAGES}/hermitux/
-docker cp ${CONTAINER}:/root/hermitux/hermitux-kernel/prefix/x86_64-hermit/extra/tests/hermitux \
-	${IMAGES}/hermitux/hermitux.kernel
-docker cp ${CONTAINER}:/root/hermitux/hermitux-kernel/prefix/bin/proxy \
-		${IMAGES}/hermitux/uhyve
-docker container stop $CONTAINER
-docker rm -f $CONTAINER
-
-sed -i -e "s/loglevel verbose/loglevel notice/" ${IMAGES}/hermitux/redis.conf
-sed -i -e "s/timeout 300/timeout 0/" ${IMAGES}/hermitux/redis.conf
-sed -i -e "s/END/maxclients 0/" ${IMAGES}/hermitux/redis.conf
-echo "END" >> ${IMAGES}/hermitux/redis.conf
+# CONTAINER=hermitux-tmp
+# docker pull olivierpierre/hermitux
+# docker run --rm --privileged --name=$CONTAINER \
+# 			--cpuset-cpus="${CPU1}-${CPU4}" \
+# 			-v $(pwd)/data:/data-imported \
+# 			-dt olivierpierre/hermitux
+# docker exec -it $CONTAINER bash -c \
+# 		 "cd /root/hermitux/apps/redis-2.0.4 && make"
+# mkdir -p ${IMAGES}/hermitux/
+# docker cp ${CONTAINER}:/root/hermitux/apps/redis-2.0.4/redis-server \
+# 	${IMAGES}/hermitux/
+# docker cp ${CONTAINER}:/root/hermitux/apps/redis-2.0.4/redis.conf \
+# 	${IMAGES}/hermitux/
+# docker cp ${CONTAINER}:/root/hermitux/apps/redis-2.0.4/.minifs \
+# 	${IMAGES}/hermitux/
+# docker cp ${CONTAINER}:/root/hermitux/hermitux-kernel/prefix/x86_64-hermit/extra/tests/hermitux \
+# 	${IMAGES}/hermitux/hermitux.kernel
+# docker cp ${CONTAINER}:/root/hermitux/hermitux-kernel/prefix/bin/proxy \
+# 		${IMAGES}/hermitux/uhyve
+# docker container stop $CONTAINER
+# docker rm -f $CONTAINER
+# 
+# sed -i -e "s/loglevel verbose/loglevel notice/" ${IMAGES}/hermitux/redis.conf
+# sed -i -e "s/timeout 300/timeout 0/" ${IMAGES}/hermitux/redis.conf
+# sed -i -e "s/END/maxclients 0/" ${IMAGES}/hermitux/redis.conf
+# echo "END" >> ${IMAGES}/hermitux/redis.conf

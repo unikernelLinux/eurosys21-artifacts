@@ -37,25 +37,28 @@ build_lupine() {
 	echo "CONFIG_VIRTIO_PCI=y" >> configs/lupine-djw-kml-qemu.config
 	echo "CONFIG_VIRTIO_PCI=y" >> configs/microvm.config
 	echo "CONFIG_VGA_ARB_MAX_GPUS=16" >> configs/microvm.config
+	cp configs/lupine-djw-kml-qemu.config configs/lupine-djw-nokml-qemu.config
 
-	./scripts/build-with-configs.sh configs/lupine-djw-kml-qemu.config \
-						configs/apps/nginx.config
+	#./scripts/build-with-configs.sh configs/lupine-djw-kml-qemu.config \
+	#					configs/apps/nginx.config
 	./scripts/build-with-configs.sh configs/lupine-djw-kml-qemu.config \
 						configs/apps/redis.config
-	./scripts/build-with-configs.sh nopatch configs/microvm.config \
-						configs/apps/nginx.config
-	./scripts/build-with-configs.sh nopatch configs/microvm.config \
+	./scripts/build-with-configs.sh nopatch configs/lupine-djw-nokml-qemu.config \
 						configs/apps/redis.config
+	#./scripts/build-with-configs.sh nopatch configs/microvm.config \
+	#					configs/apps/nginx.config
+	#./scripts/build-with-configs.sh nopatch configs/microvm.config \
+	#					configs/apps/redis.config
 
 	# just in case :)
 	make build-env-image
 
 	# build normal lupine kernels
 	# TODO it would be nice to build this with GCC 6.3.0 to be absolutely fair
-	./scripts/build-kernels.sh
+	#./scripts/build-kernels.sh
 
 	# idempotence
-	git checkout scripts/build-kernels.sh
+	#git checkout scripts/build-kernels.sh
 	popd
     fi
 }
