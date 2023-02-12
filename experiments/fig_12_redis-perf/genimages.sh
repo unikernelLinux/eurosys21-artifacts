@@ -10,8 +10,9 @@ BUILDDIR=..
 GUESTSTART=$(pwd)/data/guest_start.sh
 IMAGES=$(pwd)/images
 
-#rm -rf $IMAGES
-#mkdir -p $IMAGES
+rm -rf $IMAGES
+mkdir -p $IMAGES
+cp imple/redis-initrd.cpio.gz $IMAGES
 
 # ========================================================================
 # Generate Unikraft VM images
